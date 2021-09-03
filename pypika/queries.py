@@ -1164,9 +1164,13 @@ class QueryBuilder(Selectable, Term):
                 return False
         return True
 
-    def _tag_subquery(self, subquery: "QueryBuilder") -> None:
-        subquery.alias = "sq%d" % self._subquery_count
+    def _tag_subquery(self, query: "QueryBuilder") -> None:
+        query.alias = "sq%d" % self._subquery_count
         self._subquery_count += 1
+        # Recursively reassign aliases to subqueries
+        for subquery in query._from:
+            if isinstance(subquery, QueryBuilder):
+                self._tag_subquery(subquery)
 
     def _apply_terms(self, *terms: Any) -> None:
         """

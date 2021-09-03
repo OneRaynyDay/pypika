@@ -157,6 +157,20 @@ class QueryTablesTests(unittest.TestCase):
         self.assertTrue(q.is_joined(self.table_b))
         self.assertFalse(q.is_joined(self.table_c))
 
+    def test_join_realiases(self):
+        q1 = Query.from_(self.table_a).select(self.table_a.star)
+        q1 = Query.from_(q1).select(q1.star)
+        q2 = Query.from_(self.table_b).select(self.table_b.star)
+        q2 = Query.from_(q2).select(q2.star)
+        query = Query.from_(q1).join(q2).on(q1.x == q2.y).select(q1.star, q2.stuff)
+        self.assertEqual(
+            'SELECT "sq1".*,"sq2"."stuff" FROM '
+            '(SELECT "sq0".* FROM (SELECT * FROM "a") "sq0") "sq1" JOIN '
+            '(SELECT "sq3".* FROM (SELECT * FROM "b") "sq3") "sq2" ON '
+            '"sq1"."x"="sq2"."y"',
+            str(query)
+        )
+
 
 class QueryBuilderTests(unittest.TestCase):
     def test_query_builders_have_reference_to_correct_query_class(self):
